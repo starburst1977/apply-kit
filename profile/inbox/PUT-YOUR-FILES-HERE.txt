@@ -1,0 +1,13 @@
+Put your current CV in this folder as a PDF.
+
+Also useful, if you have them:
+- Your LinkedIn profile as a PDF (on your profile page: More, then Save to PDF).
+  Important: before you save it, click every "see more" under your roles and your About
+  text, and "Show all experiences" if some roles are hidden. LinkedIn only prints what is
+  open on screen, so anything still collapsed arrives cut off mid-sentence.
+- Older CVs
+- Cover letters you have written
+
+A Word file? Open it and choose File, then Save as PDF (or Export as PDF).
+
+When the files are in, go back to Claude and say so.

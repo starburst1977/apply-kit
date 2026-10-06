@@ -1,0 +1,20 @@
+# Tools and build output
+node_modules/
+/output/
+.build/
+.DS_Store
+
+# Your own data stays on your computer, never in version control
+profile/*
+!profile/inbox/
+profile/inbox/*
+!profile/inbox/PUT-YOUR-FILES-HERE.txt
+applications/*
+!applications/.gitkeep
+
+# Installed layout packs are licensed to you, not to share
+themes/*
+!themes/README.md
+
+# Layout pack zips dropped into the folder
+apply-kit-layout-pack-*.zip

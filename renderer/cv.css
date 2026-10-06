@@ -1,0 +1,338 @@
+/* ============================================================
+   Apply Kit layout: A4 print stylesheet for CVs and cover letters.
+   Self-contained. No framework, no reset library.
+   Rendered to PDF by headless Chromium (renderer/render.mjs).
+   ============================================================ */
+
+:root {
+  --font-display: "Source Serif 4 Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Source Sans 3 Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --accent: #B85C38; /* overridden per document from kit.config.json */
+}
+
+/* Base. These reproduce what the original layout inherited from its host
+   site, so line breaks and page breaks come out exactly the same. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid; }
+
+/* All rem-based spacing below is calibrated against a 17px root. */
+html {
+  font-size: 17px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  background: #ffffff;
+}
+body { background: #ffffff; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* Monogram mark, used when no logo file is configured */
+.cv-monogram {
+  font-family: var(--font-display);
+  font-size: 14pt;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #1a1a1a;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.cv-logo { display: block; }
+
+/* ============================================================
+   CV / cover letter layout — designed for A4 print to PDF.
+   Quieter than the portfolio: white bg, terracotta only on
+   small section labels. Source Serif for name, Source Sans
+   everywhere else.
+   ============================================================ */
+
+@page {
+  size: A4;
+  margin: 2.4cm 3.6cm 2.4cm 3.6cm;
+}
+
+.cv-body {
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: var(--font-sans);
+  font-size: 10pt;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.cv-page {
+  max-width: 21cm;
+  margin: 0 auto;
+  padding: 2.4cm 3.6cm 4rem;
+}
+
+@media print {
+  .cv-page { padding: 0; max-width: none; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+.cv-header {
+  margin-bottom: 1.4cm;
+}
+
+.cv-mark {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cv-mark-line {
+  flex: 1;
+  height: 1px;
+  background-color: #e5ddd0;
+}
+
+.cv-logo {
+  height: 22px;
+  width: auto;
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
+/* ---------- typographic content (rendered from markdown) ---------- */
+
+/* Name — first h1 in the document */
+.cv-content h1 {
+  font-family: var(--font-display);
+  font-size: 26pt;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin: 0;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+/* CV variant — first paragraph after h1 is the subtitle / role line. */
+.cv-variant-cv .cv-content h1 + p {
+  font-family: var(--font-display);
+  font-size: 12pt;
+  line-height: 1.4;
+  color: #6b635a;
+  margin: 0.35rem auto 1.4cm auto;
+  max-width: 18cm;
+  text-align: center;
+}
+
+/* CV variant — second paragraph is the labels-and-values contact block */
+.cv-variant-cv .cv-content h1 + p + p {
+  font-family: var(--font-sans);
+  font-size: 9pt;
+  color: #6b635a;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+/* Letter variant — first paragraph after h1 is the contact line directly
+   (no subtitle in between). Render it at body font size. */
+.cv-variant-letter .cv-content h1 + p {
+  font-family: var(--font-sans);
+  font-size: 9.5pt;
+  line-height: 1.6;
+  color: #6b635a;
+  margin: 0.5rem auto 0 auto;
+  max-width: 18cm;
+  text-align: center;
+}
+
+.cv-content h1 + p + p strong,
+.cv-content h1 + p + p + p strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* Horizontal rule — quiet hairline */
+.cv-content hr {
+  border: none;
+  border-top: 1px solid #e5ddd0;
+  margin: 1.1rem 0;
+}
+
+/* The first hr separates the header block from the body content —
+   give it equal, generous breathing room above and below so the
+   title block reads as its own clean unit. */
+.cv-content hr:first-of-type {
+  margin: 1.4cm 0;
+}
+
+/* Section heading h2 (PROFESSIONAL SUMMARY, CORE SKILLS, etc.) */
+.cv-content h2 {
+  font-family: var(--font-sans);
+  font-size: 8.5pt;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 1.4rem 0 0.7rem 0;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+/* Whatever follows an h2 stays with it */
+.cv-content h2 + * {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+/* Role heading h3 (Role | Company | Dates) */
+.cv-content h3 {
+  font-family: var(--font-sans);
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 1rem 0 0.1rem 0;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+/* Subtitle stays under its role heading. Deliberately no break-after:
+   that chained consecutive roles into one block too tall to place. */
+.cv-content h3 + p {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+.cv-content h3 + p + ul,
+.cv-content h3 + ul {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+/* Italic context line under each role */
+.cv-content h3 + p em,
+.cv-content h3 + p {
+  font-family: var(--font-sans);
+  font-size: 9.5pt;
+  font-style: italic;
+  color: #6b635a;
+  margin: 0 0 0.5rem 0;
+}
+
+/* Body paragraphs */
+.cv-content p {
+  margin: 0 0 0.7rem 0;
+  color: #1a1a1a;
+}
+
+/* Bullet lists — em-dash style to match portfolio */
+.cv-content ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.2rem 0 0.7rem 0;
+}
+
+.cv-content ul li {
+  padding-left: 1.25rem;
+  position: relative;
+  margin-bottom: 0.32rem;
+  line-height: 1.5;
+}
+
+.cv-content ul li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.cv-content strong {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.cv-content em {
+  font-style: italic;
+}
+
+.cv-content a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Protect single bullets, not whole roles. A whole role (~5cm) that
+   cannot split jumps pages and leaves 3-4cm gaps. Heading + subtitle +
+   first bullet still stay together through the break-before rules above. */
+.cv-content li {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* A role's last bullet never starts a page alone: it takes the bullet before it
+   along, and with a short role the break-before rules above move the whole role. */
+.cv-content li:last-child {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+/* Short CV sections (no role headings) stay on one page. The renderer wraps them. */
+.cv-content .cv-section-short {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* ---------- formal letter elements (optional, from frontmatter) ---------- */
+.cv-content .letter-meta {
+  margin: 0 0 1.3rem 0;
+}
+
+.cv-content .letter-to {
+  font-style: normal;
+  line-height: 1.5;
+  color: #1a1a1a;
+  margin: 0 0 1.2rem 0;
+}
+
+.cv-content .letter-date {
+  text-align: right;
+  color: #6b635a;
+  margin: 0 0 1.2rem 0;
+}
+
+/* Subject line: DIN 5008 style, bold, no "Betreff:" label */
+.cv-content .letter-subject {
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* ---------- letters: fit to one page, keep the sign-off attached ---------- */
+/* The renderer lowers --fit (1 -> 0.92) when a letter is a few lines over one
+   page. Only spacing tightens. Type size never changes. */
+:root { --fit: 1; }
+
+.cv-variant-letter.cv-body { line-height: calc(1.55 * var(--fit)); }
+.cv-variant-letter .cv-header { margin-bottom: calc(1.4cm * var(--fit)); }
+.cv-variant-letter .cv-content hr:first-of-type { margin: calc(1.4cm * var(--fit)) 0; }
+.cv-variant-letter .cv-content p { margin-bottom: calc(0.7rem * var(--fit)); }
+.cv-variant-letter .cv-content .letter-meta { margin-bottom: calc(1.3rem * var(--fit)); }
+.cv-variant-letter .cv-content .letter-to,
+.cv-variant-letter .cv-content .letter-date { margin-bottom: calc(1.2rem * var(--fit)); }
+.cv-variant-letter .cv-content .letter-subject { margin-bottom: 0; }
+
+/* No paragraph splits leaving fewer than 3 lines on either side. The sign-off,
+   and anything after it (portfolio line, P.S.), never stands alone on a page:
+   it takes the last lines of the letter with it. The renderer tags the sign-off
+   by its wording; last-child is the fallback when no sign-off is recognised. */
+.cv-variant-letter .cv-content p { orphans: 3; widows: 3; }
+.cv-variant-letter .cv-content .letter-signoff,
+.cv-variant-letter .cv-content .letter-signoff ~ *,
+.cv-variant-letter .cv-content > p:last-child {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+/* Contact items wrap between each other, never inside an address or URL */
+.cv-content .nowrap { white-space: nowrap; }

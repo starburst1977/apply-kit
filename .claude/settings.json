@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version)",
+      "Bash(npm install)",
+      "Bash(npm run pdf)",
+      "Bash(npm run pdf:*)",
+      "Edit(profile/**)",
+      "Edit(applications/**)",
+      "Edit(kit.config.json)",
+      "Bash(npm run check)",
+      "Bash(npm run check:*)",
+      "WebFetch",
+      "WebSearch",
+      "Edit(applications/ads/**)",
+      "Bash(unzip:*)"
+    ]
+  }
+}
