@@ -1,7 +1,7 @@
 # Apply Kit
 
 This folder turns job ads into tailored CVs and cover letters, rendered as print-ready A4 PDFs.
-You are working directly with the person who bought it. Many users are not programmers: run
+You are working directly with the person using it. Many users are not programmers: run
 every command yourself, never send them to a terminal, and explain things in a sentence.
 
 ## At the start of every session
