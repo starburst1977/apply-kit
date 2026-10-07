@@ -429,3 +429,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Contact items wrap between each other, never inside an address or URL */
 .cv-content .nowrap { white-space: nowrap; }
+
+/* ---------- text order in the PDF ----------
+   Chromium writes positioned elements into the PDF after all other text. Bullets are
+   positioned (for their dash or dot), so a CV's PDF used to list every role heading first and
+   every bullet afterwards: anything reading the PDF in stored order, as many applicant
+   tracking systems do, attached achievements to the wrong job. Positioning every content
+   element the same way, without any offset, puts all text in one pass, in document order.
+   Nothing moves. Zero specificity, so a layout's own positioning always wins. */
+:where(.cv-content) :where(*) { position: relative; }
