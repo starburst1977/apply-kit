@@ -186,7 +186,9 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
   font-size: 8.5pt;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  /* 0.10em is the widest tracking text extractors still read as one word; from 0.12em on,
+     pdf.js reads "E X P E R I E N C E" and a heading search for "Experience" fails. */
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
   margin: 1.4rem 0 0.7rem 0;
