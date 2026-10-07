@@ -65,7 +65,7 @@ roles gives your letters real stories, and noticeably better ones.
 
 The kit comes with the **Classic** layout: serif name, centred header, dates on the right.
 
-**[Layout Pack 1](https://buy.polar.sh/polar_cl_NmROLmRsVNrLNKKkFgJAEBsBnHEwqMfQgLxwi3gB17Y)** adds eight more, for 19 € or $19:
+The **[Layout Pack](https://buy.polar.sh/polar_cl_NmROLmRsVNrLNKKkFgJAEBsBnHEwqMfQgLxwi3gB17Y)** adds eight more, for 19 € or $19:
 
 - **Modern**, **Compact** and **Margin**: one column, for careers that need two pages.
 - **DIN 5008**: the formal German business letter, with the address placed for a window
@@ -108,7 +108,7 @@ Bugs and ideas: open an issue on GitHub.
 4. „Hallo“ schreiben. Claude führt durch die Einrichtung, auf Deutsch, wenn Sie Deutsch schreiben.
 
 Danach: Stellenanzeige einfügen, Claude prüft, wie gut sie passt, und schreibt Lebenslauf und
-Anschreiben als PDF. Das **[Layout Pack 1](https://buy.polar.sh/polar_cl_oy5ZBeS71ub3jzTs6Hfl86JcHbQhbn0Wo7OZn4QHc1s)** (19 €)
+Anschreiben als PDF. Das **[Layout Pack](https://buy.polar.sh/polar_cl_oy5ZBeS71ub3jzTs6Hfl86JcHbQhbn0Wo7OZn4QHc1s)** (19 €)
 bringt acht weitere Layouts, darunter das
 Anschreiben nach DIN 5008 mit tabellarischem Lebenslauf und vier zweispaltige Layouts mit
 optionalem Foto.
