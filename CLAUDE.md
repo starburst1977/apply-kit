@@ -34,7 +34,8 @@ in `applications/tracker.md`.
   Never mix them with the user's own data.
 - `kit.config.json`: name, accent colour, mark (monogram, logo or none), custom monogram
   letters, place for letters, default language, layout (`theme`; see "Layouts" in
-  `guide/format.md`). A `theme:` line in one document overrides it.
+  `guide/format.md`), photo (off unless set; only some layouts show one). A `theme:` or
+  `photo: false` line in one document overrides it.
 - `themes/`: installed layouts besides the built-in Classic, one folder each.
 
 ## Layout packs
@@ -50,7 +51,8 @@ layout they pick, so they see it work. Never write or edit a pack's files yourse
 any without a confirmed source; `npm run check -- <name>` checks matching files. Run it before
 every render and resolve each flag. `npm run pdf` renders everything in `applications/`; `npm run pdf -- <part of a file name>`
 renders matching files. Read the report and fix every warning before calling a document done:
-a CV whose last page is nearly empty, a letter over one page, a character the font can't draw.
+a CV whose last page is nearly empty, a CV over one page in a one-page layout, a letter over
+one page, a character the font can't draw.
 
 ## Rules for every document
 

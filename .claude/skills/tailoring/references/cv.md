@@ -13,9 +13,10 @@ down ("over 25 years", "über 25 Jahre") and never count parallel roles twice. T
 record it under Contact as `- **Years of experience:** over 25 [source: derived from your
 confirmed timeline, Dec 1999 to today]`, so the numbers check can see it.
 
-3. **Skills:** the ad's required skills first, where the user has them; then others from the
-   profile the ad would value. Drop what's irrelevant here. Only skills the user could discuss
-   confidently in an interview.
+3. **Skills and Tools & methods:** lists, one item per line (`guide/format.md`). The ad's
+   required skills first, where the user has them; then others from the profile the ad would
+   value. Software, methods and certificates go under Tools & methods. Drop what's irrelevant
+   here. Only skills the user could discuss confidently in an interview.
 4. **Experience:** most recent first. Dates and titles exactly as in `experience.md`.
    - The last 10 to 15 years in detail; older roles one line each, or grouped.
    - Two to five bullets per role, picked for this ad. The most relevant role gets the most.
@@ -26,8 +27,13 @@ confirmed timeline, Dec 1999 to today]`, so the numbers check can see it.
      and tools where the ad cares about tools.
 5. **Keywords:** every must-have the user genuinely has appears at least once, in the ad's own
    words. Must-haves they don't have: never added.
-6. **Leave out:** photo (unless the ad or the user asks), date of birth, age, marital status,
-   "references available on request", an "objective" line, duties without results.
+6. **Leave out:** date of birth, age, marital status, "references available on request", an
+   "objective" line, duties without results. A photo appears only if `kit.config.json` sets
+   one; for an application to the UK, US or Ireland, add `photo: false` to the CV's top block.
 
 Length: two pages is ideal, three for 15 years or more of relevant work. If the renderer
 reports a nearly empty last page, cut the weakest bullets rather than squeeze.
+In a one-page layout (its description says "on one page"), the CV must fit one page: when the
+renderer reports lines on page 2, cut the weakest bullets and condense older roles until it
+fits. If that would drop something the ad needs, tell the user and suggest a layout that runs
+to two pages for this application (`theme:` in the CV's top block).

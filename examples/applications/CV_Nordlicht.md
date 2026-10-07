@@ -7,13 +7,7 @@ Senior Product Managerin · Kundenportale und B2B-Plattformen
 
 ## Profil
 
-Senior Product Managerin mit über 12 Jahren Erfahrung in Plattformen und Portalen, auf denen Menschen wissen wollen, woran sie sind: heute im Sendungstracking einer digitalen Frachtplattform, davor im Kundenportal eines Stadtwerks. Ich spreche jede Woche mit Nutzerinnen und Nutzern und mache daraus Ziele, die das Team selbst verantworten kann. Deutsch Muttersprache, Englisch C2.
-
----
-
-## Kenntnisse
-
-Kundenportale • Benachrichtigungen und Statuskommunikation • Product Discovery • Nutzerinterviews • Roadmaps und Outcome-Ziele • SQL • Looker • Scrum (PSPO I)
+Senior Product Managerin mit über 12 Jahren Erfahrung in Plattformen und Portalen, auf denen Menschen wissen wollen, woran sie sind: heute im Sendungstracking einer digitalen Frachtplattform, davor im Kundenportal eines Stadtwerks. Ich spreche jede Woche mit Nutzerinnen und Nutzern und mache daraus Ziele, die das Team selbst verantworten kann.
 
 ---
 
@@ -36,18 +30,39 @@ Kundenportale • Benachrichtigungen und Statuskommunikation • Product Discove
 ### Business Analyst | Kerner & Partner | Sept. 2013–Dez. 2016
 *Unternehmensberatung für Logistik und Supply Chain*
 
-- Prozessanalysen und Anforderungen für Lager- und Transportprojekte bei mittelständischen Herstellern.
+- Prozessanalysen und Anforderungen für Lager- und Transportprojekte im Mittelstand.
+
+---
+
+## Fachkenntnisse
+
+- Kundenportale
+- Statusbenachrichtigungen
+- Product Discovery
+- Nutzerinterviews
+- Roadmaps und Outcome-Ziele
+
+---
+
+## Tools und Methoden
+
+- SQL
+- Looker
+- Scrum (PSPO I)
 
 ---
 
 ## Ausbildung
 
-**MSc Wirtschaftsinformatik** | TU München | 2013
+**MSc Wirtschaftsinformatik**  
+TU München · 2013
 
-**Professional Scrum Product Owner (PSPO I)** | Scrum.org | 2018
+**Professional Scrum Product Owner (PSPO I)**  
+Scrum.org · 2018
 
 ---
 
 ## Sprachen
 
-**Deutsch** (Muttersprache) • **Englisch** (C2)
+- **Deutsch** (Muttersprache)
+- **Englisch** (C2)

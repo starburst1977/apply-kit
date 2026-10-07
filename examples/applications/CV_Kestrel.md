@@ -11,12 +11,6 @@ Senior Product Manager with over 12 years in logistics and B2B platforms, curren
 
 ---
 
-## Skills
-
-Carrier and shipper platforms • Product discovery • User interviews • Notifications and status communication • Roadmapping and outcome goals • SQL • Looker • Scrum (PSPO I)
-
----
-
 ## Experience
 
 ### Senior Product Manager | Frachtwerk GmbH | Mar 2021–present
@@ -40,14 +34,35 @@ Carrier and shipper platforms • Product discovery • User interviews • Noti
 
 ---
 
+## Skills
+
+- Carrier and shipper platforms
+- Product discovery
+- User interviews
+- Notifications and status communication
+- Roadmapping and outcome goals
+
+---
+
+## Tools & methods
+
+- SQL
+- Looker
+- Scrum (PSPO I)
+
+---
+
 ## Education
 
-**MSc Business Informatics** | TU München | 2013
+**MSc Business Informatics**  
+TU München · 2013
 
-**Professional Scrum Product Owner (PSPO I)** | Scrum.org | 2018
+**Professional Scrum Product Owner (PSPO I)**  
+Scrum.org · 2018
 
 ---
 
 ## Languages
 
-**German** (native) • **English** (C2)
+- **German** (native)
+- **English** (C2)

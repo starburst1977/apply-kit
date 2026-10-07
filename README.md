@@ -63,11 +63,17 @@ roles gives your letters real stories, and noticeably better ones.
 
 ## Layouts
 
-The kit comes with the **Classic** layout: serif name, centred header, generous margins.
+The kit comes with the **Classic** layout: serif name, centred header, dates on the right.
 
-More layouts are coming as small paid packs, among them **DIN 5008**, the formal German
-business letter with the address placed for a window envelope. Installed layouts can be
-mixed: a different layout for one letter while your CV stays as it is.
+**[Layout Pack 1](https://buy.polar.sh/polar_cl_NmROLmRsVNrLNKKkFgJAEBsBnHEwqMfQgLxwi3gB17Y)** adds eight more, for 19 € or $19:
+
+- **Modern**, **Compact** and **Margin**: one column, for careers that need two pages.
+- **DIN 5008**: the formal German business letter, with the address placed for a window
+  envelope, and a tabular CV to match.
+- **Statement**, **Mono**, **Sidebar** and **Poster**: two columns on one page, each with an
+  optional photo.
+
+Layouts can be mixed: a DIN 5008 letter next to a CV in another layout, for example.
 
 ## Your data
 
@@ -102,10 +108,12 @@ Bugs and ideas: open an issue on GitHub.
 4. „Hallo“ schreiben. Claude führt durch die Einrichtung, auf Deutsch, wenn Sie Deutsch schreiben.
 
 Danach: Stellenanzeige einfügen, Claude prüft, wie gut sie passt, und schreibt Lebenslauf und
-Anschreiben als PDF. Weitere Layouts, darunter das Anschreiben nach DIN 5008, folgen als
-kleine Pakete.
+Anschreiben als PDF. Das **[Layout Pack 1](https://buy.polar.sh/polar_cl_oy5ZBeS71ub3jzTs6Hfl86JcHbQhbn0Wo7OZn4QHc1s)** (19 €)
+bringt acht weitere Layouts, darunter das
+Anschreiben nach DIN 5008 mit tabellarischem Lebenslauf und vier zweispaltige Layouts mit
+optionalem Foto.
 
 ## Licence
 
-The kit is MIT licensed, see `LICENSE`. Layout packs will be sold separately under their
-own licence. Made by [Sven Read](https://www.svenread.com), a product designer near Munich.
+The kit is MIT licensed, see `LICENSE`. Layout packs are sold separately under their own
+licence. Made by [Sven Read](https://www.svenread.com), a product designer near Munich.

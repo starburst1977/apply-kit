@@ -12,8 +12,8 @@
 // Chromium's page.pdf() writes real, selectable text with embedded fonts.
 
 import { existsSync } from 'node:fs';
-import { readFile, writeFile, mkdir, readdir, copyFile } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { readFile, writeFile, mkdir, readdir, copyFile, cp, stat } from 'node:fs/promises';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import MarkdownIt from 'markdown-it';
 import { chromium } from 'playwright';
@@ -21,6 +21,13 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
+const KIT_VERSION = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')).version;
+// "1.10.0" is newer than "1.9.2": compare part by part as numbers
+const newer = (a, b) => {
+  const [x, y] = [a, b].map((v) => String(v).split('.').map(Number));
+  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0);
+  return false;
+};
 
 // ---------- arguments ----------
 const args = process.argv.slice(2);
@@ -150,6 +157,151 @@ function markSignoff(html) {
   return html;
 }
 
+// "Title | Company | Dates" -> one span per part (cv-role-title, cv-role-company,
+// cv-role-dates) with an empty span.cv-sep between them; cv.css draws the " | ".
+// Two parts are title + company, or title + dates
+// when the second part has a digit. Parts between company and dates are cv-role-detail.
+function splitRoleHeading(inner) {
+  const parts = inner.split(' | ');
+  if (parts.length < 2) return inner;
+  const names = parts.map((p, i) => {
+    if (i === 0) return 'title';
+    if (i === parts.length - 1 && /\d/.test(p.replace(/<[^>]+>/g, ''))) return 'dates';
+    return i === 1 ? 'company' : 'detail';
+  });
+  return parts.map((p, i) => `<span class="cv-role-${names[i]}">${p}</span>`).join('<span class="cv-sep"></span>');
+}
+
+// CV sections after the intro, arranged for the layout. Works on structure only, never on
+// heading words, so it behaves the same in any language:
+// - list sections (a heading and one list: skills, tools, languages) are gathered under
+//   one label when the layout sets "group_lists" ({"en": "Knowledge", "de": "Kenntnisse"});
+//   the group sits where the first list section was
+// - consecutive short sections after the first one share a div.cv-run, so a layout can
+//   set them side by side
+// - "columns": 2 puts the first section and every section with roles in div.cv-main, the
+//   other short sections in aside.cv-aside; "aside: Skills, Languages" in a document's
+//   frontmatter names the side column's sections instead. Main comes first in the HTML,
+//   so an applicant tracking system reads the experience before the side column.
+// A document with anything unexpected between its sections is left as it is.
+function arrangeSections(html, t, fm, lang, hasPhoto) {
+  const start = html.indexOf('</header>');
+  if (start === -1) return html;
+  // The contact block (the intro paragraph whose items the renderer kept together)
+  const head = html.slice(0, start + 9).replace(/<p>[\s\S]*?<\/p>/g, (p) =>
+    p.includes('class="nowrap"') ? p.replace('<p>', '<p class="cv-contact">') : p);
+  const rest = html.slice(start + 9);
+  const tokens = [...rest.matchAll(/<section[\s\S]*?<\/section>|<hr\s*\/?>/g)];
+  if (rest.replace(/<section[\s\S]*?<\/section>|<hr\s*\/?>/g, '').trim()) return html;
+  const lead = tokens[0]?.[0].startsWith('<hr') ? tokens.shift()[0] : '';
+  let sections = tokens.filter((m) => m[0].startsWith('<section')).map((m, i) => {
+    const inner = m[0].replace(/^<section[^>]*>|<\/section>$/g, '');
+    const title = (inner.match(/<h2[^>]*>([\s\S]*?)<\/h2>/)?.[1] ?? '').replace(/<[^>]+>/g, '').trim();
+    const short = m[0].includes('cv-section-short');
+    const list = short && /^\s*<ul>[\s\S]*<\/ul>\s*$/.test(inner.replace(/<h2[^>]*>[\s\S]*?<\/h2>/, ''));
+    // Classes a layout can style without knowing the heading words
+    const extra = `${i === 0 ? ' cv-section-first' : ''}${list ? ' cv-section-list' : ''}`;
+    const html = m[0].replace(/^<section class="([^"]*)"/, `<section class="$1${extra}"`);
+    return { html, inner, title, short, list };
+  });
+  if (!sections.length) return html;
+
+  const label = t.groupLists && (t.groupLists[lang] ?? t.groupLists.en ?? Object.values(t.groupLists)[0]);
+  const lists = sections.filter((s, i) => i > 0 && s.list);
+  if (label && lists.length >= 2) {
+    // A list named like the group itself ("Kenntnisse" under "Kenntnisse") keeps its row
+    // but not its name, so the word doesn't print twice.
+    const same = (s) => s.title.toLowerCase() === label.toLowerCase();
+    const items = lists.map((s) => `<div class="cv-group-item${same(s) ? ' cv-group-item-same' : ''}">${s.inner}</div>`).join('\n');
+    const group = {
+      html: `<section class="cv-section cv-section-short cv-group"><h2 class="cv-group-label">${escapeHtml(label)}</h2>\n${items}</section>`,
+      title: label, members: lists.map((s) => s.title.toLowerCase()), short: true, list: false,
+    };
+    const at = sections.indexOf(lists[0]);
+    sections = sections.filter((s) => !lists.includes(s));
+    sections.splice(at, 0, group);
+  }
+
+  const join = (list) => {
+    const out = [];
+    for (let i = 0; i < list.length;) {
+      let j = i;
+      if (i > 0 && list[i].short) while (j + 1 < list.length && list[j + 1].short) j++;
+      out.push(j > i ? `<div class="cv-run">${list.slice(i, j + 1).map((s) => s.html).join('<hr>')}</div>` : list[i].html);
+      i = j + 1;
+    }
+    return out.join('<hr>');
+  };
+
+  if (t.columns !== 2) return `${head}\n${lead}${join(sections)}`;
+  const named = (fm.aside ?? '').split(',').map((n) => n.trim().toLowerCase()).filter(Boolean);
+  const inAside = named.length
+    ? (s) => named.includes(s.title.toLowerCase()) || (s.members ?? []).some((m) => named.includes(m))
+    : (s, i) => i > 0 && s.short;
+  const main = sections.filter((s, i) => !inAside(s, i));
+  const aside = sections.filter((s, i) => inAside(s, i));
+  let mainHtml = main.map((s) => s.html).join('<hr>');
+  let asideHtml = aside.map((s) => s.html).join('<hr>');
+
+  // Where the intro goes in a two-column layout: above both columns (default), "split"
+  // (name and title on top of the main column, photo and contact on top of the side
+  // column), or "aside" (all of it on top of the side column, which then comes first in
+  // the HTML, so the name and contact are still read first). "photo_intro" in theme.json
+  // sets the mode for CVs with a photo.
+  const mode = (hasPhoto && t.photoIntro) || t.intro || 'full';
+  if (mode === 'full') {
+    return `${head}\n${lead}<div class="cv-columns"><div class="cv-main">${mainHtml}</div>`
+      + `<aside class="cv-aside">${asideHtml}</aside></div>`;
+  }
+  const open = head.indexOf('<header class="cv-intro">');
+  const parts = [...head.slice(open).matchAll(/<figure[\s\S]*?<\/figure>|<h1[\s\S]*?<\/h1>|<p[\s\S]*?<\/p>/g)].map((m) => m[0]);
+  const side = mode === 'aside' ? parts : parts.filter((p) => p.startsWith('<figure') || p.includes('cv-contact'));
+  const top = parts.filter((p) => !side.includes(p));
+  if (top.length) mainHtml = `<header class="cv-intro cv-intro-main">${top.join('\n')}</header>${mainHtml}`;
+  asideHtml = `<header class="cv-intro cv-intro-aside">${side.join('\n')}</header>${asideHtml}`;
+  const columns = mode === 'aside'
+    ? `<aside class="cv-aside">${asideHtml}</aside><div class="cv-main">${mainHtml}</div>`
+    : `<div class="cv-main">${mainHtml}</div><aside class="cv-aside">${asideHtml}</aside>`;
+  return `${head.slice(0, open)}<div class="cv-columns cv-columns-${mode}">${columns}</div>`;
+}
+
+// Photo: off unless kit.config.json sets "photo" (a file next to the config, for example
+// "profile/photo.jpg"). CVs only, and only in layouts with a photo slot ("photo": true in
+// theme.json). "photo: false" in a document's frontmatter leaves it out of that document,
+// "photo: other.jpg" uses another file. Copied into .build, so the HTML stays self-contained.
+const PHOTO_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
+async function photoHtml(fm, theme, type) {
+  const wanted = String(fm.photo ?? config.photo ?? '').trim();
+  if (type !== 'cv' || !wanted || /^(false|no|off|none)$/i.test(wanted)) return '';
+  if (!THEMES[theme].photo) {
+    const withPhoto = Object.values(THEMES).filter((t) => t.photo).map((t) => t.name);
+    themeWarnings.add(`the ${THEMES[theme].name} layout has no space for a photo, so it is left out. ${withPhoto.length ? `Layouts with a photo: ${withPhoto.join(', ')}.` : 'None of the installed layouts has one.'}`);
+    return '';
+  }
+  const src = resolve(configDir, wanted);
+  if (!existsSync(src) || !PHOTO_TYPES.includes(extname(src).toLowerCase())) {
+    themeWarnings.add(`photo "${wanted}" not found or not a JPG, PNG or WebP file; CVs are rendered without it.`);
+    return '';
+  }
+  const size = (await stat(src)).size;
+  if (size > 1.5 * 1024 * 1024) {
+    themeWarnings.add(`photo "${wanted}" is ${(size / 1024 / 1024).toFixed(1)} MB and goes into every CV as is. A JPG of about 600 × 750 px is plenty and keeps the PDF small.`);
+  }
+  const file = `photo-${basename(src).replace(/[^\w.-]/g, '_')}`;
+  await copyFile(src, join(buildDir, file));
+  return `<figure class="cv-photo"><img src="${file}" alt="${escapeHtml(config.name)}"></figure>`;
+}
+
+// The italic company line under a role also carries the role's dates as data-dates, so a
+// layout can run them into one free-flowing line ("Mar 2021–present · Digital freight ...")
+// with ::before { content: attr(data-dates) } and hide the separate dates.
+function withDates(role) {
+  const dates = role.match(/<span class="cv-role-dates">([\s\S]*?)<\/span>/)?.[1];
+  if (!dates) return role;
+  const plain = escapeHtml(dates.replace(/<[^>]+>/g, '').trim());
+  return role.replace(/(<\/h3>\s*)<p>(?=<em>)/, `$1<p data-dates="${plain}">`);
+}
+
 async function markHtml() {
   const mark = config.mark ?? 'monogram';
   if (mark === 'none') return '';
@@ -198,18 +350,29 @@ async function prepareFonts() {
       await copyFile(join(pkgDir, 'files', file), join(fontDir, file));
     }
     css.push(face.replace(/url\(\.\/files\//g, 'url(./fonts/'));
-    for (const [, list] of face.matchAll(/unicode-range:\s*([^;]+);/g)) {
-      for (const part of list.split(',')) {
-        const [lo, hi = lo] = part.trim().replace(/^U\+/i, '').split('-');
-        coveredRanges.push([parseInt(lo, 16), parseInt(hi, 16)]);
-      }
-    }
+    addCoverage(face);
   }
   await writeFile(join(buildDir, 'fonts.css'), css.join('\n'));
   await copyFile(join(here, 'cv.css'), join(buildDir, 'cv.css'));
   await mkdir(join(buildDir, 'themes'), { recursive: true });
   for (const [name, t] of Object.entries(THEMES)) {
     if (t.css) await copyFile(t.css, join(buildDir, 'themes', `${name}.css`));
+    // Layout fonts go to themes/<name>/, so fonts.css finds its files at ./fonts/
+    if (t.fonts) {
+      const dest = join(buildDir, 'themes', name);
+      await mkdir(dest, { recursive: true });
+      await copyFile(join(t.fonts, 'fonts.css'), join(dest, 'fonts.css'));
+      if (existsSync(join(t.fonts, 'fonts'))) await cp(join(t.fonts, 'fonts'), join(dest, 'fonts'), { recursive: true });
+      addCoverage(await readFile(join(t.fonts, 'fonts.css'), 'utf8'));
+    }
+  }
+}
+function addCoverage(face) {
+  for (const [, list] of face.matchAll(/unicode-range:\s*([^;]+);/g)) {
+    for (const part of list.split(',')) {
+      const [lo, hi = lo] = part.trim().replace(/^U\+/i, '').split('-');
+      coveredRanges.push([parseInt(lo, 16), parseInt(hi, 16)]);
+    }
   }
 }
 
@@ -222,7 +385,7 @@ const themeWarnings = new Set();
 // Margins in cm: top, right, bottom, left.
 const themesDir = join(root, 'themes');
 const THEMES = {
-  classic: { name: 'Classic', cv: [2.4, 3.6, 2.4, 3.6], letter: [2.4, 3.6, 2.4, 3.6], letterhead: false, css: null },
+  classic: { name: 'Classic', cv: [2.4, 3.6, 2.4, 3.6], letter: [2.4, 3.6, 2.4, 3.6], letterhead: false, css: null, columns: 1, pages: null, groupLists: null, photo: false },
 };
 if (existsSync(themesDir)) {
   for (const entry of await readdir(themesDir, { withFileTypes: true })) {
@@ -234,7 +397,24 @@ if (existsSync(themesDir)) {
       const meta = JSON.parse(await readFile(join(dir, 'theme.json'), 'utf8'));
       const m = meta.margins_cm ?? {};
       if (!Array.isArray(m.cv) || !Array.isArray(m.letter)) throw new Error('margins_cm.cv and margins_cm.letter are required');
-      THEMES[key] = { name: meta.name ?? entry.name, cv: m.cv, letter: m.letter, letterhead: !!meta.letterhead, css: join(dir, 'theme.css') };
+      // "requires": "1.1.0" – the kit version this layout was made for. An older kit would
+      // render it wrongly, so it is skipped with a note instead.
+      if (meta.requires && newer(meta.requires, KIT_VERSION)) {
+        throw new Error(`needs Apply Kit ${meta.requires} or newer (this is ${KIT_VERSION}). Update the kit, then render again`);
+      }
+      // A layout with its own typefaces ships them as fonts.css plus a fonts/ folder.
+      const fonts = existsSync(join(dir, 'fonts.css')) ? dir : null;
+      // Optional: "columns": 2 (main + side column), "pages": 1 (a CV that must fit one page),
+      // "group_lists": {"en": "Knowledge", "de": "Kenntnisse"} (list sections under one label),
+      // "photo": true (a photo slot), "intro" / "photo_intro": "split" or "aside" (two columns).
+      THEMES[key] = {
+        name: meta.name ?? entry.name, cv: m.cv, letter: m.letter, letterhead: !!meta.letterhead,
+        css: join(dir, 'theme.css'), fonts,
+        columns: meta.columns === 2 ? 2 : 1, pages: meta.pages === 1 ? 1 : null, groupLists: meta.group_lists ?? null,
+        photo: meta.photo === true,
+        intro: ['split', 'aside'].includes(meta.intro) ? meta.intro : null,
+        photoIntro: ['split', 'aside'].includes(meta.photo_intro) ? meta.photo_intro : null,
+      };
     } catch (err) {
       themeWarnings.add(`theme "${entry.name}" skipped: ${err.message}`);
     }
@@ -321,7 +501,10 @@ for (const file of files) {
     .replace(/(\d) (%|€|\$|Prozent|percent)/g, '$1\u00A0$2')
     .split('\n')
     .map((line) => (/@|linkedin|www\./i.test(line) && line.includes(' | ')
-      ? line.split(' | ').map((item) => `<span class="nowrap">${item}</span>`).join(' | ')
+      ? line.split(' | ')
+        // "**Email:**&nbsp;" becomes a label a layout can hide without leaving a space behind
+        .map((item) => item.replace(/^(\*\*[^*]+\*\*(?:&nbsp;| | ))/, '<span class="cv-contact-label">$1</span>'))
+        .map((item) => `<span class="nowrap">${item}</span>`).join('<span class="cv-sep"></span>')
       : line))
     .join('\n');
 
@@ -331,19 +514,37 @@ for (const file of files) {
   // CVs: wrap each section (h2 up to the next rule or h2). Sections without role
   // headings (profile, skills, education, languages) are short and never split
   // across a page; experience still breaks between roles and bullets.
+  let hasPhoto = false;
   if (type === 'cv') {
     content = content.replace(/<h2[\s>][\s\S]*?(?=<hr|<h2[\s>]|$)/g, (section) =>
       `<section class="cv-section${/<h3[\s>]/.test(section) ? '' : ' cv-section-short'}">${section}</section>`);
+    // Role headings: "Title | Company | Dates" gets one span per part, so a layout can
+    // arrange them (dates on the right, company on its own line). Words and order stay as
+    // written, so an applicant tracking system reads the same role.
+    content = content.replace(/<h3>([\s\S]*?)<\/h3>/g, (h, inner) => `<h3>${splitRoleHeading(inner)}</h3>`);
+    // Each role (heading, company line, bullets) becomes one block a layout can arrange.
+    content = content.replace(/(<section class="cv-section">)([\s\S]*?)(<\/section>)/g, (s, open, inner, close) =>
+      open + inner.replace(/<h3[\s>][\s\S]*?(?=<h3[\s>]|$)/g, (role) => `<div class="cv-role">${withDates(role)}</div>`) + close);
+    // Name, subtitle and contact block: everything before the first rule.
+    content = /<hr\s*\/?>/.test(content)
+      ? content.replace(/^\s*(<h1>[\s\S]*?)(?=<hr\s*\/?>)/, '<header class="cv-intro">$1</header>\n')
+      : content.replace(/^\s*(<h1>[\s\S]*?<\/h1>(?:\s*<p>[\s\S]*?<\/p>){0,2})/, '<header class="cv-intro">$1</header>');
+    // The photo goes into the intro first, so the arrangement can move it with the contact
+    const photo = await photoHtml(fm, theme, type);
+    if (photo) content = content.replace('<header class="cv-intro">', `<header class="cv-intro">${photo}`);
+    content = arrangeSections(content, THEMES[theme], fm, lang, !!photo);
+    hasPhoto = !!photo;
   }
-  // Themes that position the letter precisely (theme.json "letterhead": true) need name and
-  // contact line as one block they can give a fixed height.
-  if (type === 'letter' && THEMES[theme].letterhead) {
-    content = content.replace(/^\s*(<h1>[\s\S]*?<\/h1>\s*(?:<p>[\s\S]*?<\/p>)?)/, '<header class="letterhead">$1</header>');
+  // Letters: name and contact line as one block. Themes that position the letter precisely
+  // (theme.json "letterhead": true) give it a fixed height through the letterhead class.
+  if (type === 'letter') {
+    const cls = THEMES[theme].letterhead ? 'cv-intro letterhead' : 'cv-intro';
+    content = content.replace(/^\s*(<h1>[\s\S]*?<\/h1>\s*(?:<p>[\s\S]*?<\/p>)?)/, `<header class="${cls}">$1</header>`);
   }
   const meta = type === 'letter' ? letterMeta(fm, lang) : '';
   if (meta) {
     if (/<hr\s*\/?>/.test(content)) content = content.replace(/<hr\s*\/?>/, (hr) => hr + meta);
-    else if (/<\/h1>\s*<p>[\s\S]*?<\/p>/.test(content)) content = content.replace(/(<\/h1>\s*<p>[\s\S]*?<\/p>)/, `$1${meta}`);
+    else if (content.includes('</header>')) content = content.replace('</header>', `</header>${meta}`);
     else content = meta + content;
   }
 
@@ -357,11 +558,11 @@ for (const file of files) {
 <title>${escapeHtml(`${config.name} · ${type === 'cv' ? 'CV' : 'Letter'} · ${base.replace(/^.*?(CV|CoverLetter|Letter|Anschreiben)_/i, '')}`)}</title>
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="cv.css">
-${theme === 'classic' ? '' : `<link rel="stylesheet" href="themes/${theme}.css">`}
+${THEMES[theme].fonts ? `<link rel="stylesheet" href="themes/${theme}/fonts.css">\n` : ''}${theme === 'classic' ? '' : `<link rel="stylesheet" href="themes/${theme}.css">`}
 <style>:root { --accent: ${config.accent ?? '#B85C38'}; }
 @page { margin: ${margins.map((m) => `${m}cm`).join(' ')}; }</style>
 </head>
-<body class="cv-body cv-variant-${type} theme-${theme}">
+<body class="cv-body cv-variant-${type} theme-${theme}${hasPhoto ? ' has-photo' : ''}">
 <main class="cv-page">
 <header class="cv-header"><div class="cv-mark">${header}</div></header>
 <article class="cv-content">
@@ -381,11 +582,12 @@ ${content}
   await page.pdf(pdfOptions);
   let result = await analyse(pdfPath, margins);
 
-  // A letter a few lines over one page: tighten spacing in small steps until it
-  // fits. Type size never changes. If it still won't fit, render at normal
-  // spacing again so the warning matches the file on disk.
+  // A letter, or a CV in a one-page layout ("pages": 1), a few lines over one page:
+  // tighten spacing in small steps until it fits. Type size never changes. If it still
+  // won't fit, render at normal spacing again so the warning matches the file on disk.
   let tightened = 0;
-  if (type === 'letter' && result.pages > 1) {
+  const onePage = type === 'letter' || THEMES[theme].pages === 1;
+  if (onePage && result.pages > 1) {
     for (const fit of [0.97, 0.94, 0.92]) {
       await page.evaluate((f) => document.documentElement.style.setProperty('--fit', String(f)), fit);
       await page.pdf(pdfOptions);
@@ -403,7 +605,7 @@ ${content}
     }
   }
 
-  report.push({ file, pdfPath, lang, type, theme, tightened, missing: uncoveredChars(body + ' ' + Object.values(fm).join(' ')), ...result });
+  report.push({ file, pdfPath, lang, type, theme, onePage, tightened, missing: uncoveredChars(body + ' ' + Object.values(fm).join(' ')), ...result });
 }
 
 await browser.close();
@@ -417,6 +619,9 @@ for (const r of report) {
   if (r.type === 'letter' && r.pages > 1) {
     // A cover letter has one job: fit on one page.
     note = `  ⚠ a cover letter should fit on one page; ${plural(r.overflowLines)} ran onto page 2. Ask Claude to cut it down.`;
+  } else if (r.type === 'cv' && r.onePage && r.pages > 1) {
+    // Two-column layouts are built for one page: a second page would leave the side column empty.
+    note = `  ⚠ the ${THEMES[r.theme].name} layout fits one page; ${plural(r.overflowLines)} ran onto page 2. Ask Claude to cut it down, or pick a layout that runs to two pages.`;
   } else if (r.type === 'cv' && r.pages > 1 && (r.lastLines <= 4 || r.lastFill < 0.12)) {
     note = `  ⚠ last page holds only ${plural(r.lastLines)}: trim a little, or ask Claude to tighten it`;
   }

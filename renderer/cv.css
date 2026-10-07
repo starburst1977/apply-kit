@@ -37,7 +37,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 14pt;
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: #1a1a1a;
+  color: var(--accent);
   line-height: 1;
   flex-shrink: 0;
 }
@@ -104,7 +104,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Name — first h1 in the document */
 .cv-content h1 {
   font-family: var(--font-display);
-  font-size: 26pt;
+  font-size: 28.5pt;
   font-weight: 500;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -130,9 +130,24 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 9pt;
   color: #6b635a;
   line-height: 1.6;
-  margin: 0;
+  /* Narrower than the page, so four contact items sit on two centred lines */
+  max-width: 12.5cm;
+  margin: 0 auto;
   text-align: center;
 }
+
+/* Separators between contact items and between the parts of a role heading. The renderer
+   writes an empty span.cv-sep; the character comes from here, so a layout can change or
+   drop it, and the PDF's text holds exactly what is on the page. The spaces inside are
+   where a contact line may wrap. */
+.cv-sep::before { content: " | "; }
+
+/* Contact items without their labels, separated by a middle dot. The labels stay in
+   the source ("**Email:**"), so a layout can show them again. */
+.cv-content .cv-intro .cv-contact-label { display: none; }
+.cv-content .cv-intro .cv-sep::before { content: " · "; word-spacing: 0.45em; }
+
+.cv-variant-letter .cv-content h1 { font-size: 27pt; }
 
 /* Letter variant — first paragraph after h1 is the contact line directly
    (no subtitle in between). Render it at body font size. */
@@ -162,7 +177,7 @@ h1, h2, h3, h4, h5, h6 {
 /* The first hr separates the header block from the body content —
    give it equal, generous breathing room above and below so the
    title block reads as its own clean unit. */
-.cv-content hr:first-of-type {
+.cv-content > hr:first-of-type {
   margin: 1.4cm 0;
 }
 
@@ -282,6 +297,83 @@ h1, h2, h3, h4, h5, h6 {
   break-inside: avoid;
 }
 
+/* ---------- roles: two lines from "Title | Company | Dates" ---------- */
+/* The renderer gives each part its own span and wraps the role in div.cv-role:
+     Senior Product Manager                         Mar 2021–present
+     Frachtwerk GmbH · Digital freight platform connecting shippers ...
+   The source text and its order are unchanged, so an ATS reads the same. */
+.cv-content .cv-role {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: 0.35em;
+  align-items: baseline;
+  margin-top: 1rem;
+}
+.cv-content .cv-role > h3 { display: contents; }
+.cv-content .cv-role .cv-sep { display: none; }
+.cv-content .cv-role-title { grid-column: 1 / 3; grid-row: 1; }
+.cv-content .cv-role-dates {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: 9pt;
+  font-weight: 400;
+  color: #6b635a;
+  white-space: nowrap;
+}
+.cv-content .cv-role-company {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 9.75pt;
+  font-weight: 600;
+  color: #4a453f;
+}
+/* A heading without a company or dates keeps the whole line */
+.cv-content .cv-role-title:last-child { grid-column: 1 / -1; }
+.cv-content .cv-role > h3 + p:has(> em:first-child) {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  font-size: 9.75pt;
+  margin: 0 0 0.5rem 0;
+}
+.cv-content .cv-role > h3 + p:has(> em:first-child)::before { content: "· "; font-style: normal; }
+.cv-content .cv-role > h3 + p:has(> em:first-child) em { font-size: inherit; }
+.cv-content .cv-role > :not(h3):not(h3 + p:has(> em:first-child)) { grid-column: 1 / -1; }
+/* Margins inside a grid don't collapse, so the role keeps the old rhythm by hand:
+   0.5rem from the company line to the bullets, 1rem between roles. */
+.cv-content .cv-role > ul { margin-top: 0; margin-bottom: 0; }
+.cv-content .cv-role > :last-child { margin-bottom: 0; }
+
+/* ---------- list sections: skills, tools, languages ---------- */
+/* Written as a list in the source, read as one line here: "A • B • C", also inside a
+   group ("group_lists"). Two-column layouts show the same list one item per line. */
+.cv-content .cv-section-list li,
+.cv-content .cv-group-item li {
+  display: inline;
+  padding-left: 0;
+  margin: 0;
+  line-height: inherit;
+}
+.cv-content .cv-section-list li::before,
+.cv-content .cv-group-item li::before { content: none; }
+.cv-content .cv-section-list li + li::before,
+.cv-content .cv-group-item li + li::before {
+  content: " • ";
+  position: static;
+  color: inherit;
+  font-weight: 400;
+  /* undo any bullet shape a layout draws for ordinary lists */
+  width: auto;
+  height: auto;
+  background: none;
+  border-radius: 0;
+}
+
+/* Grouped lists: a list named like the group keeps its place, not its name */
+.cv-content .cv-group-item-same > h2 { visibility: hidden; }
+
+/* Education: "**Degree**", line break, "School · Year". The second line is quieter. */
+.cv-content .cv-section-short p:has(> strong:first-child + br) { color: #6b635a; }
+
 /* ---------- formal letter elements (optional, from frontmatter) ---------- */
 .cv-content .letter-meta {
   margin: 0 0 1.3rem 0;
@@ -291,7 +383,8 @@ h1, h2, h3, h4, h5, h6 {
   font-style: normal;
   line-height: 1.5;
   color: #1a1a1a;
-  margin: 0 0 1.2rem 0;
+  /* A real letter leaves the address block standing on its own */
+  margin: 0 0 1.5cm 0;
 }
 
 .cv-content .letter-date {
@@ -315,10 +408,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .cv-variant-letter.cv-body { line-height: calc(1.55 * var(--fit)); }
 .cv-variant-letter .cv-header { margin-bottom: calc(1.4cm * var(--fit)); }
-.cv-variant-letter .cv-content hr:first-of-type { margin: calc(1.4cm * var(--fit)) 0; }
+.cv-variant-letter .cv-content > hr:first-of-type { margin: calc(1.4cm * var(--fit)) 0; }
 .cv-variant-letter .cv-content p { margin-bottom: calc(0.7rem * var(--fit)); }
 .cv-variant-letter .cv-content .letter-meta { margin-bottom: calc(1.3rem * var(--fit)); }
-.cv-variant-letter .cv-content .letter-to,
+.cv-variant-letter .cv-content .letter-to { margin-bottom: calc(1.5cm * var(--fit)); }
 .cv-variant-letter .cv-content .letter-date { margin-bottom: calc(1.2rem * var(--fit)); }
 .cv-variant-letter .cv-content .letter-subject { margin-bottom: 0; }
 

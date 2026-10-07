@@ -112,11 +112,18 @@ broke. Only run commands that should succeed.
      logo as an SVG file placed in `profile/`, or none.
    - Layout: Classic is built in. If `themes/` has layout folders, list them from each
      `theme.json` (name and description, one line each) and let them pick; they can switch
-     any time. If there are none, use Classic and don't ask.
+     any time. If there are none, use Classic and don't ask. A layout whose description says
+     "on one page" needs a CV that fits one page: say so when they pick it, if their career
+     is long.
+   - Photo: only if their chosen layout's description says "Optional photo". Ask neutrally,
+     once: "This layout can show a photo. Most CVs today go without one, in Germany too, and
+     in the UK or US a photo can count against you. Would you like one?" Default is no. If
+     yes, ask them to put a head-and-shoulders JPG in `profile/` and use that path.
    Write `kit.config.json`: `name`, `accent`, `mark` (`"monogram"`, `"none"` or a path such as
    `"profile/logo.svg"`), `monogram` (only for letters other than their initials, e.g. `"PL"`),
    `place`, `defaultLanguage` (`"de"` or `"en"`, from their main application language),
-   `theme` (a folder name from `themes/`; leave it out for Classic).
+   `theme` (a folder name from `themes/`; leave it out for Classic), `photo` (only if they
+   want one, e.g. `"profile/photo.jpg"`).
 3. **Master CV.** Write `applications/CV_General.md` following `guide/format.md`, in their main
    application language, angled at their main target from `targeting.md`:
    - Only facts from `experience.md`. Don't add a claim that isn't there.
