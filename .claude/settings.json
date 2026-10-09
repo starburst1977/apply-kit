@@ -10,7 +10,6 @@
       "Edit(kit.config.json)",
       "Bash(npm run check)",
       "Bash(npm run check:*)",
-      "WebFetch",
       "WebSearch",
       "Edit(applications/ads/**)",
       "Bash(unzip:*)"

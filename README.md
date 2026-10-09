@@ -82,6 +82,9 @@ and no cloud storage. The only place your information goes is to Claude, during 
 conversation, under your Claude plan's terms. Your profile, applications and PDFs are
 excluded in `.gitignore`, so they stay out of version control if you fork the kit.
 
+Claude asks before it opens a web link, such as a job ad. That's deliberate: this folder holds
+your personal data, so nothing gets fetched without your OK.
+
 ## What's in the folder
 
 - `profile/`: your facts. Claude builds and updates these with you.
