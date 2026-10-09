@@ -117,8 +117,8 @@ function formatDate(value, lang) {
 }
 
 // Formal letter elements, all optional: recipient, place + date, subject.
-// Loosely DIN 5008. These letters are uploaded as PDFs, not posted, so this
-// is not window-envelope exact.
+// Loosely DIN 5008. These letters are uploaded as PDFs, not posted, so the address
+// doesn't have to sit exactly where a letter window would show it.
 function letterMeta(fm, lang) {
   const to = (fm.to ?? '').split(/\s*·\s*|\s*\|\s*|\n/).map((l) => l.trim()).filter(Boolean);
   const date = formatDate(fm.date, lang);
@@ -274,17 +274,17 @@ async function photoHtml(fm, theme, type) {
   if (type !== 'cv' || !wanted || /^(false|no|off|none)$/i.test(wanted)) return '';
   if (!THEMES[theme].photo) {
     const withPhoto = Object.values(THEMES).filter((t) => t.photo).map((t) => t.name);
-    themeWarnings.add(`the ${THEMES[theme].name} layout has no space for a photo, so it is left out. ${withPhoto.length ? `Layouts with a photo: ${withPhoto.join(', ')}.` : 'None of the installed layouts has one.'}`);
+    warnTheme(`the ${THEMES[theme].name} layout has no space for a photo, so it is left out. ${withPhoto.length ? `Layouts with a photo: ${withPhoto.join(', ')}.` : 'None of the installed layouts has one.'}`);
     return '';
   }
   const src = resolve(configDir, wanted);
   if (!existsSync(src) || !PHOTO_TYPES.includes(extname(src).toLowerCase())) {
-    themeWarnings.add(`photo "${wanted}" not found or not a JPG, PNG or WebP file; CVs are rendered without it.`);
+    warnTheme(`photo "${wanted}" not found or not a JPG, PNG or WebP file; CVs are rendered without it.`);
     return '';
   }
   const size = (await stat(src)).size;
   if (size > 1.5 * 1024 * 1024) {
-    themeWarnings.add(`photo "${wanted}" is ${(size / 1024 / 1024).toFixed(1)} MB and goes into every CV as is. A JPG of about 600 × 750 px is plenty and keeps the PDF small.`);
+    warnTheme(`photo "${wanted}" is ${(size / 1024 / 1024).toFixed(1)} MB and goes into every CV as is. A JPG of about 600 × 750 px is plenty and keeps the PDF small.`);
   }
   const file = `photo-${basename(src).replace(/[^\w.-]/g, '_')}`;
   await copyFile(src, join(buildDir, file));
@@ -376,7 +376,9 @@ function addCoverage(face) {
 }
 
 // ---------- themes ----------
-const themeWarnings = new Set();
+// Each warning once, in the order it came up.
+const themeWarnings = [];
+const warnTheme = (w) => { if (!themeWarnings.includes(w)) themeWarnings.push(w); };
 // Classic is built in (cv.css). Further layouts are installed as folders in themes/ at the
 // kit root: themes/<name>/theme.css, layered over cv.css, plus theme.json with the page
 // margins. cv.css keeps every break, fit and sign-off rule, so no theme can undo them.
@@ -415,14 +417,14 @@ if (existsSync(themesDir)) {
         photoIntro: ['split', 'aside'].includes(meta.photo_intro) ? meta.photo_intro : null,
       };
     } catch (err) {
-      themeWarnings.add(`theme "${entry.name}" skipped: ${err.message}`);
+      warnTheme(`theme "${entry.name}" skipped: ${err.message}`);
     }
   }
 }
 function resolveTheme(fm) {
   const wanted = String(fm.theme ?? config.theme ?? 'classic').trim().toLowerCase().replace(/[\s-]/g, '');
   if (THEMES[wanted]) return wanted;
-  themeWarnings.add(`theme "${fm.theme ?? config.theme}" is not installed, used classic. Installed: ${Object.keys(THEMES).join(', ')}. Layouts go in themes/.`);
+  warnTheme(`theme "${fm.theme ?? config.theme}" is not installed, used classic. Installed: ${Object.keys(THEMES).join(', ')}. Layouts go in themes/.`);
   return 'classic';
 }
 
@@ -439,7 +441,8 @@ async function analyse(pdfPath, [top, , bottom]) {
   for (let n = 1; n <= pages; n++) {
     const { items } = await (await doc.getPage(n)).getTextContent();
     const baselines = items.filter((i) => i.str.trim()).map((i) => i.transform[5]);
-    linesPerPage.push(new Set(baselines.map((y) => Math.round(y))).size);
+    const rows = baselines.map((y) => Math.round(y));
+    linesPerPage.push(rows.filter((y, i) => rows.indexOf(y) === i).length);
     if (n === pages && baselines.length) lowest = Math.min(...baselines);
   }
   const fill = (PAGE_H - top * CM - lowest) / (PAGE_H - (top + bottom) * CM);
