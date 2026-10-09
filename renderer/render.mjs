@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Apply Kit renderer: markdown -> HTML (cv.css) -> A4 PDF via headless Chromium.
 //
 //   npm run pdf                      render every .md in applications/
@@ -178,7 +177,7 @@ function splitRoleHeading(inner) {
 //   one label when the layout sets "group_lists" ({"en": "Knowledge", "de": "Kenntnisse"});
 //   the group sits where the first list section was
 // - consecutive short sections after the first one share a div.cv-run, so a layout can
-//   set them side by side
+//   place them side by side
 // - "columns": 2 puts the first section and every section with roles in div.cv-main, the
 //   other short sections in aside.cv-aside; "aside: Skills, Languages" in a document's
 //   frontmatter names the side column's sections instead. Main comes first in the HTML,
@@ -326,13 +325,13 @@ function outputName(base) {
 const coveredRanges = [];
 const isCovered = (cp) => cp <= 0x7f || coveredRanges.some(([lo, hi]) => cp >= lo && cp <= hi);
 function uncoveredChars(text) {
-  const found = new Map();
+  const found = {};
   for (const ch of text) {
     const cp = ch.codePointAt(0);
     if (/\s/.test(ch) || isCovered(cp)) continue;
-    found.set(ch, (found.get(ch) ?? 0) + 1);
+    found[ch] = (found[ch] ?? 0) + 1;
   }
-  return [...found.entries()];
+  return Object.entries(found);
 }
 async function prepareFonts() {
   const fontDir = join(buildDir, 'fonts');
@@ -381,7 +380,7 @@ const themeWarnings = new Set();
 // Classic is built in (cv.css). Further layouts are installed as folders in themes/ at the
 // kit root: themes/<name>/theme.css, layered over cv.css, plus theme.json with the page
 // margins. cv.css keeps every break, fit and sign-off rule, so no theme can undo them.
-// The same margin numbers set the page and drive the page analysis.
+// The same margin numbers define the page and drive the page analysis.
 // Margins in cm: top, right, bottom, left.
 const themesDir = join(root, 'themes');
 const THEMES = {

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Number check: every number in an application document must appear in
 // profile/experience.md with a confirmed source.
 //
@@ -74,7 +73,7 @@ function stripFrontmatter(src) {
 
 // ---------- profile: best status per number ----------
 const RANK = { sourced: 3, unconfirmed: 2, untagged: 1 };
-const known = new Map();
+const known = Object.create(null);
 let profile;
 try {
   profile = (await readFile(profilePath, 'utf8')).replace(/\r\n/g, '\n');
@@ -85,7 +84,7 @@ try {
 for (const line of profile.split('\n')) {
   const status = line.includes('[source:') ? 'sourced' : line.includes('[unconfirmed]') ? 'unconfirmed' : 'untagged';
   for (const { key } of numbersIn(line)) {
-    if ((RANK[known.get(key)] ?? 0) < RANK[status]) known.set(key, status);
+    if ((RANK[known[key]] ?? 0) < RANK[status]) known[key] = status;
   }
 }
 
@@ -114,7 +113,7 @@ for (const file of files) {
   for (const line of text.split('\n').flatMap(sentences)) {
     if (CONTACT.test(line) || PREFERENCE.test(line)) continue;
     for (const { key, shown } of numbersIn(line)) {
-      const status = known.get(key) ?? 'absent';
+      const status = known[key] ?? 'absent';
       if (status === 'sourced') { ok++; continue; }
       const at = line.toLowerCase().indexOf(shown.toLowerCase());
       const context = line.slice(Math.max(0, at - 40), at + shown.length + 40).replace(/^[-*#\s]+/, '').trim();
